@@ -7,40 +7,6 @@ import operator
 from fysom import Fysom
 from watch import watchers
 
-class State:
-    state = None
-    last_state = None
-    callbacks = []
-
-    def __init__(self):
-        pass
-    def __call__(self):
-        return self.state
-
-    def update(self, newState):
-        if newState == state:
-            return
-        
-        last_state = state
-        state = newState
-        fireCallbacks()
-
-    def shouldCallback(self, start=None, end=None):
-        if start and start != last_state:
-            return False
-        if end and end != state:
-            return False
-
-        return True
-
-    def fireCallbacks(self):
-        for func, kwargs in self.callbacks:
-            if self.shouldCallback(**kwargs):
-                func()
-
-    def register(callback, **kwargs):
-        callbacks.append((callback, kwargs))
-
 class ScreenManager:
 
     def __init__(self, filename):
