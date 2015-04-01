@@ -1,11 +1,12 @@
 class Watcher:
     predicate = {}
+    debug = False
+    rect = None
 
-    def __init__(self, size=None, topLeft=(0,0)):
+    def __init__(self, rect=None):
         # how big of an area are we concerned with
-        self.size = size
-        # where the area begins
-        self.topLeft = topLeft
+        if rect:
+            self.rect = rect
 
         self.window = None
 
@@ -16,11 +17,11 @@ class Watcher:
         return True
     
     def transform(self, frame):
-        return frame[self.topLeft[0]:self.topLeft[0]+self.size[0], self.topLeft[1]:self.topLeft[1]+self.size[1], ...]
+        return frame[self.rect[0][1]:self.rect[1][1], self.rect[0][0]:self.rect[1][0], ...]
 
     def updateFrame(self, frame):
-        if not self.size:
-            self.size = self.manager.size
+        if not self.rect:
+            self.rect = ((0,0), self.manager.size[:2][::-1])
         self.window = self.transform(frame)
         self.update()
 

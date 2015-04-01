@@ -8,11 +8,13 @@ from fysom import Fysom
 from watch import watchers
 
 class ScreenManager:
+    debugRect = None
+    debug = False
+    states = {"mode": "unknown"}
 
     def __init__(self, filename):
         self.cap = cv2.VideoCapture(filename)
         self.history = []
-        self.states = {}
         self.watchers = []
         self.currentFrame = None
         self.size = None
@@ -24,7 +26,9 @@ class ScreenManager:
                 if not self.size:
                     self.size = frame.shape
                 self.broadcastFrame(frame)
-
+               
+                if self.debugRect:
+                    cv2.rectangle(frame, self.debugRect[0], self.debugRect[1], (255,0,0), 2)
                 cv2.imshow('frame', frame)
             if cv2.waitKey(1)==27:
                 break
@@ -42,7 +46,10 @@ class ScreenManager:
 
     def addWatcher(self, watcher):
         watcher.manager = self
+        if watcher.debug:
+            self.debugRect = watcher.rect
         self.watchers.append(watcher)
+
         return watcher
 
     def state(self, key, val=None, lookback=0):
@@ -68,10 +75,11 @@ class ScreenManager:
             self.stateChange = True
         return val
 
-manager = ScreenManager('black-screen.mp4')
+manager = ScreenManager('bowsers-castle.mp4')
 
 for Watcher in watchers:
-    manager.addWatcher(Watcher())
+    watcher = Watcher()
+    manager.addWatcher(watcher)
 
 manager.loop()
 
