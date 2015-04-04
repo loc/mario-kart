@@ -6,77 +6,11 @@ from functools32 import lru_cache
 import operator
 from fysom import Fysom
 from watch import watchers
+from managers.screen import ScreenManager
 
-class ScreenManager:
-    debugRect = None
-    debug = False
-    states = {"mode": "unknown"}
 
-    def __init__(self, filename):
-        self.cap = cv2.VideoCapture(filename)
-        self.history = []
-        self.watchers = []
-        self.currentFrame = None
-        self.size = None
-
-    def loop(self):
-        while self.cap.isOpened():
-            ret, frame = self.cap.read()
-            if ret is True:
-                if not self.size:
-                    self.size = frame.shape
-                self.broadcastFrame(frame)
-               
-                if self.debugRect:
-                    cv2.rectangle(frame, self.debugRect[0], self.debugRect[1], (255,0,0), 2)
-                cv2.imshow('frame', frame)
-            if cv2.waitKey(1)==27:
-                break
-
-        self.cleanup()
-
-    def broadcastFrame(self, frame):
-        for watcher in self.watchers:
-            if watcher.shouldWatch():
-                watcher.updateFrame(frame)
-
-    def cleanup(self):
-        self.cap.release()
-        cv2.destroyAllWindows()
-
-    def addWatcher(self, watcher):
-        watcher.manager = self
-        if watcher.debug:
-            self.debugRect = watcher.rect
-        self.watchers.append(watcher)
-
-        return watcher
-
-    def state(self, key, val=None, lookback=0):
-        if not val:
-            return self.getState(key, lookback)
-        return self.setState(key, val)
-
-    def getState(self, key, lookback=0):
-        if lookback == 0:
-            stateDict = self.states
-        else:
-            stateDict = self.states[-lookback]
-
-        if stateDict and key in stateDict:
-            return stateDict[key]
-        
-
-    def setState(self, key, val):
-        if key not in self.states or self.states[key] != val:
-            self.history.append(self.states.copy())
-            self.states[key] = val
-            print self.states
-            self.stateChange = True
-        return val
-
-manager = ScreenManager('bowsers-castle.mp4')
-
+manager = ScreenManager('trimmed-castle.mp4')
+manager.state('playerCount', 4)
 for Watcher in watchers:
     watcher = Watcher()
     manager.addWatcher(watcher)
