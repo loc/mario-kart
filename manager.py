@@ -1,6 +1,7 @@
 class Manager(object):
     debugRect = None
     debug = False
+    supress = False
 
     def __init__(self):
         self.history = []
@@ -27,10 +28,10 @@ class Manager(object):
     def updateState(self):
         self.frozenState = self.states.copy()
 
-    def state(self, key, val=None, lookback=0):
-        if not val:
+    def state(self, key, val=None, lookback=0, force=False):
+        if val == None:
             return self.getState(key, lookback)
-        return self.setState(key, val)
+        return self.setState(key, val, force=force)
 
     def getState(self, key, lookback=0):
         stateDict = self.states
@@ -41,11 +42,12 @@ class Manager(object):
             return stateDict[key]
         
 
-    def setState(self, key, val):
-        if key not in self.states or self.states[key] != val:
+    def setState(self, key, val, force=False):
+        if key not in self.states or force or self.states[key] != val:
             self.history.append(self.states.copy())
             self.states[key] = val
-            print self.states
+            if not self.supress:
+                print self.states
             self.stateChange = True
         return val
 

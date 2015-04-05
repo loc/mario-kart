@@ -4,13 +4,15 @@ from manager import Manager
 import numpy as np
 from watch.players.place import PlaceWatcher
 import util
-
+from collections import deque
 watcherClasses = [PlaceWatcher]
 
 class PlayersManager(Manager, Watcher):
     current = None
    # debug = True
     players = []
+    verified = 0
+    lastRanks = None
 
     def __init__(self):
         super(PlayersManager, self).__init__()
@@ -31,21 +33,59 @@ class PlayersManager(Manager, Watcher):
         midY = h/2
 
         positions = ("left", "right", "left", "right")
-        rects = (((0,0), (midX, midY)), ((midX + 1, 0), (w, midY)), ((0, midY), (midX, h)), ((midX + 1, midY + 1), (w, h)))
+        rects = (((0,0), (midX, midY)), ((midX + 2, 0), (w, midY)), ((0, midY+2), (midX, h)), ((midX + 2, midY + 2), (w, h)))
         for i in range(self.manager.state('playerCount')):
-            self.players.append(PlayerManager(positions[i], rects[i]))
+            player = PlayerManager(positions[i], rects[i])
+            player.id = i
+            self.players.append(player)
+            
+    def sortRank(self, ranksAndCertainties):
+        ranksAndCertainties = np.sort(ranksAndCertainties, order="certainty")
+        ranks = ranksAndCertainties['rank'].tolist()
+
+        unfilled = set(range(1,5)) ^ set(ranks)
+        counts = [ranks.count(i) for i in range(1, 5)]
+
+        i = 0
+        while len(unfilled):
+            if (counts[ranks[i]-1] > 1):
+                ranksAndCertainties[i]["rank"] = unfilled.pop()
+                counts[ranks[i]-1] -= 1
+            i+=1
+
+        return np.sort(ranksAndCertainties, order="player")
+        
 
     def updateFrame(self, frame):
         self.window = frame
         if len(self.players) == 0:
             self.createPlayers()
         
-        for player in self.players:
+        for i, player in enumerate(self.players):
             player.broadcastFrame(frame)
+
+        dt = [("player", int), ("rank", int), ("certainty", float)]
+        ranksAndCertainties = [(i + 1, player.state('rank'), player.state('rankCertainty')) for i, player in enumerate(self.players)]
+        adjusted = self.sortRank(np.array(ranksAndCertainties, dtype=dt))
+
+        if np.array_equal(self.lastRanks, adjusted['rank']):
+            self.verified += 1
+        else:
+            self.verified = 0
+            self.lastRanks = adjusted['rank']
+        if self.verified == 2:
+            last = self.manager.state('ranks')
+            if last is None or not np.array_equal(last, adjusted['rank']):
+                self.manager.state('ranks', adjusted['rank'], force=True)
+
+
+        #print adjusted['rank'].reshape(2,2)
 
 
 
 class PlayerManager(Manager):
+    supress = True
+
     def __init__(self, direction="left", rect=None):
         self.rect = rect
         self.direction = direction
