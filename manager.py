@@ -28,10 +28,10 @@ class Manager(object):
     def updateState(self):
         self.frozenState = self.states.copy()
 
-    def state(self, key, val=None, lookback=0, force=False):
+    def state(self, key, val=None, lookback=0, force=False, supress=False):
         if val == None:
             return self.getState(key, lookback)
-        return self.setState(key, val, force=force)
+        return self.setState(key, val, force=force, supress=supress)
 
     def getState(self, key, lookback=0):
         stateDict = self.states
@@ -42,11 +42,11 @@ class Manager(object):
             return stateDict[key]
         
 
-    def setState(self, key, val, force=False):
+    def setState(self, key, val, force=False, supress=False):
         if key not in self.states or force or self.states[key] != val:
             self.history.append(self.states.copy())
             self.states[key] = val
-            if not self.supress:
+            if not self.supress and not supress:
                 print self.states
             self.stateChange = True
         return val

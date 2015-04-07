@@ -3,9 +3,11 @@ from watcher import Watcher
 from manager import Manager
 import numpy as np
 from watch.players.place import PlaceWatcher
+from watch.players.lap import LapWatcher
 import util
 from collections import deque
-watcherClasses = [PlaceWatcher]
+
+watcherClasses = [PlaceWatcher, LapWatcher]
 
 class PlayersManager(Manager, Watcher):
     current = None
@@ -79,12 +81,7 @@ class PlayersManager(Manager, Watcher):
                 self.manager.state('ranks', adjusted['rank'], force=True)
 
 
-        #print adjusted['rank'].reshape(2,2)
-
-
-
 class PlayerManager(Manager):
-    supress = True
 
     def __init__(self, direction="left", rect=None):
         self.rect = rect

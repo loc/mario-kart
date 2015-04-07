@@ -48,8 +48,8 @@ class PlaceWatcher(Watcher):
         self.currentRank = np.argmax(vals) + 1
         certainty = abs(np.subtract(*(np.sort(vals)[-2:])))
 
-        self.manager.state('rank', self.currentRank)
-        self.manager.state('rankCertainty', certainty)
+        self.manager.state('rank', self.currentRank, supress=True)
+        self.manager.state('rankCertainty', certainty, supress=True)
 
         self.lastRank = self.currentRank
 

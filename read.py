@@ -2,14 +2,12 @@ import numpy as np
 import cv2
 from scipy import signal, ndimage
 import time
-from functools32 import lru_cache
 import operator
-from fysom import Fysom
 from watch import watchers
 from managers.screen import ScreenManager
 
 
-manager = ScreenManager('ranks.mp4')
+manager = ScreenManager('trimmed-castle.mp4')
 manager.state('playerCount', 4)
 for Watcher in watchers:
     watcher = Watcher()
