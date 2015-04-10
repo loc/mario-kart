@@ -103,10 +103,9 @@ class PlayerManager(Manager):
         self.rect = rect
         self.direction = direction
         super(PlayerManager, self).__init__()
-        self.states = {"raceStatus": "started"}
+#        self.states = {"raceStatus": "started"}
         self.initWatchers()
         self.rankVerification = 0
-
 
     def initWatchers(self):
         for watcherClass in watcherClasses:

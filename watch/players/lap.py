@@ -32,14 +32,18 @@ class LapWatcher(Watcher):
         win = gray
         vals = []
 
-        crop = util.crop(win, np.hstack((self.topLeft[self.direction], size)))
+        crop = util.crop(win, np.hstack((self.topLeft[self.direction], size)) + (-5, -5, 10, 10))
         area = cv2.Canny(crop, 400, 300)
 
-        for index, template in enumerate(templates):
-            val = np.sum((area - template)**2)
+        for index, template in enumerate(templates): 
+            val = np.max(scipy.signal.correlate2d(area, template, mode="valid"))/float(np.sum(template))
             vals.append(val)
+        
+        #if self.manager.id == 2:
+        #  print vals
 
-        self.lap = np.argmin(vals) + 1
+
+        self.lap = np.argmax(vals) + 1
         if self.lastLap == self.lap:
           self.verified += 1
         else:

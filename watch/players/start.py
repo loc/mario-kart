@@ -3,40 +3,34 @@ import numpy as np
 import cv2
 import numpy.linalg as la 
 import util
+import scipy
+
+goTemplate = cv2.Canny(cv2.imread("templates/go.jpg", cv2.IMREAD_GRAYSCALE), 270, 200)
+finishTemplate = cv2.Canny(cv2.imread("templates/finish.jpg", cv2.IMREAD_GRAYSCALE), 300, 200)
+finishTemplateColor = cv2.imread("templates/finish-color.jpg")
 
 class StartWatcher(Watcher):
-    startRect = ((235, 95),  (10, 30))
-    finishRect = ((117, 95),  (170, 40))
+    startRect = ((157, 92),  goTemplate.shape[::-1])
+    finishRect = ((121, 95),  finishTemplate.shape[::-1])
     debug = True
     color = [21, 135, 229]
 
     def debugRect(self):
-        return self.startRect
+        return self.finishRect
 
     def update(self):
-        #print self.window
         if self.manager.state('raceStatus') is None:
-            startCropped = util.crop(self.window, np.hstack(self.startRect))
-            numOrange = np.sum(la.norm(startCropped-self.color, axis=2) < 10)
-            if numOrange > 10:
+            startCropped = cv2.Canny(util.crop(self.window, np.hstack(self.startRect) + (-5, -5, 10, 10)), 350, 200)
+
+            val = np.max(scipy.signal.correlate2d(startCropped, goTemplate, mode="valid"))
+            if val > 200:
                 self.manager.state('raceStatus', "started")
+            
         else:
-            finishCropped = util.crop(self.window, np.hstack(self.finishRect))
-            numOrange = np.sum(la.norm(finishCropped-self.color, axis=2) < 10)
-            if numOrange > 100:
+            finishCropped = cv2.Canny(util.crop(self.window, np.hstack(self.finishRect) + (-5, -5, 10, 10)), 350, 200)
+            vals = scipy.signal.correlate2d(finishCropped, finishTemplate, mode="valid")
+
+            if (np.max(vals) > 230):
                 self.manager.state('raceStatus', 'finished')
-
-
-            #cv2.waitKey(0)
-        #if numOrange > 0:
-        #    print numOrange
-        #    if numOrange > 10:
-        #        cv2.waitKey(0)
-        #print np.abs(self.window-self.color)
-
-#        diff = np.abs(np.mean(self.window, axis=(0,1)) - np.array())
-#        print np.all(diff < 5)
-        pass
-
 
 export = StartWatcher
