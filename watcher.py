@@ -1,3 +1,6 @@
+import util
+import numpy as np
+
 class Watcher(object):
     predicate = {}
     debug = False
@@ -18,7 +21,8 @@ class Watcher(object):
         return True
     
     def transform(self, frame):
-        return frame[self.rect[0][1]:self.rect[1][1], self.rect[0][0]:self.rect[1][0], ...]
+        return util.crop(frame, np.hstack(self.rect))
+        #return frame[self.rect[0][1]:self.rect[1][1], self.rect[0][0]:self.rect[1][0], ...]
 
     def debugRect(self):
         return self.rect

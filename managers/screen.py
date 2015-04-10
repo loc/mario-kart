@@ -1,13 +1,19 @@
 import cv2
+import cv2.cv as cv
 from manager import Manager
 import util
+from video import RTMPCapture
 
 class ScreenManager(Manager):
     debugRect = None
     debug = False
+    frameNumber = 0
 
     def __init__(self, filename):
-        self.cap = cv2.VideoCapture(filename)
+        if filename.startswith('rtmp'):
+            self.cap = RTMPCapture(filename)
+        else:
+            self.cap = cv2.VideoCapture(filename)
         super(ScreenManager, self).__init__()
         self.states = {"mode": "unknown"}
 
@@ -16,16 +22,15 @@ class ScreenManager(Manager):
             self.updateState()
             ret, frame = self.cap.read()
             if ret is True:
+                self.frameNumber += 1
+                self.rect = ((0,0), frame.shape[-2::-1])
 
                 if self.state('crop') != None:
                     frame = util.cropRect(frame, self.state('crop'))
 
                 self.broadcastFrame(frame)
 
-                for watcher in self.watchers:
-                    rect = watcher.debugRect()
-                    if watcher.debug and rect:
-                        cv2.rectangle(frame, rect[0], rect[1], (255,0,0), 1)
+                self.drawDebugRects(frame)
                 cv2.imshow('frame', frame)
             if cv2.waitKey(1)==27:
                 break
@@ -35,6 +40,9 @@ class ScreenManager(Manager):
     def cleanup(self):
         self.cap.release()
         cv2.destroyAllWindows()
+
+    def modeChanged(self, value):
+        print "# mode changed:", value
 
     def addWatcher(self, watcher):
         super(ScreenManager, self).addWatcher(watcher)

@@ -7,7 +7,7 @@ from watch import watchers
 from managers.screen import ScreenManager
 
 
-manager = ScreenManager('trimmed-castle.mp4')
+manager = ScreenManager('finish.mp4')
 manager.state('playerCount', 4)
 for Watcher in watchers:
     watcher = Watcher()

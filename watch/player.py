@@ -4,23 +4,24 @@ from manager import Manager
 import numpy as np
 from watch.players.place import PlaceWatcher
 from watch.players.lap import LapWatcher
+from watch.players.start import StartWatcher
 import util
 from collections import deque
 
-watcherClasses = [PlaceWatcher, LapWatcher]
+watcherClasses = [PlaceWatcher, LapWatcher, StartWatcher]
 
 class PlayersManager(Manager, Watcher):
     current = None
    # debug = True
     players = []
     verified = 0
-    lastRanks = None
+    lastRanks = [None] * 4
 
     def __init__(self):
         super(PlayersManager, self).__init__()
 
     def shouldWatch(self):
-        if self.manager.state('mode') == 'racing' and self.manager.state('crop') is not None:
+        if self.manager.state('mode') == 'racing' and self.manager.state('crop') is not None or self.manager.state('mode') == "overview":
             return True
         return False
 
@@ -39,6 +40,7 @@ class PlayersManager(Manager, Watcher):
         for i in range(self.manager.state('playerCount')):
             player = PlayerManager(positions[i], rects[i])
             player.id = i
+            player.screenManager = self.manager
             self.players.append(player)
             
     def sortRank(self, ranksAndCertainties):
@@ -59,26 +61,40 @@ class PlayersManager(Manager, Watcher):
         
 
     def updateFrame(self, frame):
+        if self.manager.state('mode') == 'overview':
+            for player in self.players:
+                player.reset()
+            return
+
         self.window = frame
         if len(self.players) == 0:
             self.createPlayers()
         
         for i, player in enumerate(self.players):
             player.broadcastFrame(frame)
+        
+        # update global state with race info from players
+        if (self.manager.state('raceStatus') != "started" and player.state('raceStatus') == "started"):
+            self.manager.state('raceStatus', "started")
+        if self.manager.state('raceStatus') == "started" and np.all([player.state('raceStatus') == "finished" for player in self.players]):
+            self.manager.state('raceStatus', "finished")
 
-        dt = [("player", int), ("rank", int), ("certainty", float)]
-        ranksAndCertainties = [(i + 1, player.state('rank'), player.state('rankCertainty')) for i, player in enumerate(self.players)]
-        adjusted = self.sortRank(np.array(ranksAndCertainties, dtype=dt))
+        if self.manager.state('raceStatus') == "started":
+            dt = [("player", int), ("rank", int), ("certainty", float)]
+            ranksAndCertainties = [(i + 1, player.state('unverifiedRank'), player.state('rankCertainty')) for i, player in enumerate(self.players)]
+            adjusted = self.sortRank(np.array(ranksAndCertainties, dtype=dt))
 
-        if np.array_equal(self.lastRanks, adjusted['rank']):
-            self.verified += 1
-        else:
-            self.verified = 0
-            self.lastRanks = adjusted['rank']
-        if self.verified == 2:
-            last = self.manager.state('ranks')
-            if last is None or not np.array_equal(last, adjusted['rank']):
-                self.manager.state('ranks', adjusted['rank'], force=True)
+            for i, player, rank, last in zip(range(len(self.players)), self.players, adjusted['rank'], self.lastRanks):
+                if rank == last:
+                    player.rankVerification += 1
+                else:
+                    player.rankVerification = 0
+                    self.lastRanks[i] = rank
+                
+                if player.rankVerification == 2:
+                    previous = player.state('rank')
+                    if previous != rank:
+                        player.state('rank', rank)
 
 
 class PlayerManager(Manager):
@@ -87,16 +103,10 @@ class PlayerManager(Manager):
         self.rect = rect
         self.direction = direction
         super(PlayerManager, self).__init__()
+        self.states = {"raceStatus": "started"}
         self.initWatchers()
+        self.rankVerification = 0
 
-    def drawDebugRects(self, frame):
-        for watcher in self.watchers:
-            if watcher.debug:
-                d = watcher.debugRect()
-                if d:
-                    adjusted = (self.rect[0][0] + d[0][0], self.rect[0][1] + d[0][1])
-                    rect = util.pointSizeToRect((adjusted, d[1]))
-                    cv2.rectangle(frame, rect[0], rect[1], (255,0,0), 1)
 
     def initWatchers(self):
         for watcherClass in watcherClasses:
@@ -104,9 +114,31 @@ class PlayerManager(Manager):
             watcher.direction = self.direction
             self.addWatcher(watcher)
 
+    def reset(self):
+        if self.hasReset:
+            return
+        
+        self.hasReset = True
+
+        self.unset('raceStatus')
+        self.unset('lap')
+        self.unset('rank')
+        self.unset('rankUncertainty')
+        self.unset('unverifiedRank')
+
+    def rankChanged(self, value):
+        print self.frameNumber, "rank", value, self.id
+
+    def lapChanged(self, value):
+        print self.frameNumber, "lap", value, self.id 
+
+    def raceStatusChanged(self, value):
+        print self.frameNumber, "race", value, self.id
+
     def broadcastFrame(self, frame):
+        self.hasReset = False
+        self.frameNumber = self.screenManager.frameNumber
         cropped = util.cropRect(frame, self.rect)
-        #cv2.imshow(str(self.rect), cropped)
         super(PlayerManager, self).broadcastFrame(cropped)
         self.drawDebugRects(frame)
 

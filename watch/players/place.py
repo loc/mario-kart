@@ -16,6 +16,7 @@ c = 0
 
 
 class PlaceWatcher(Watcher):
+    predicate = {"raceStatus": "started"}
     #predicate = {"mode": "racing"}
     #rect = ((66, 166), (122,225))
     debug = True
@@ -48,7 +49,7 @@ class PlaceWatcher(Watcher):
         self.currentRank = np.argmax(vals) + 1
         certainty = abs(np.subtract(*(np.sort(vals)[-2:])))
 
-        self.manager.state('rank', self.currentRank, supress=True)
+        self.manager.state('unverifiedRank', self.currentRank, supress=True)
         self.manager.state('rankCertainty', certainty, supress=True)
 
         self.lastRank = self.currentRank
