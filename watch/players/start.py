@@ -13,7 +13,7 @@ class StartWatcher(Watcher):
     startRect = ((157, 92),  goTemplate.shape[::-1])
     finishRect = ((121, 95),  finishTemplate.shape[::-1])
     debug = True
-    color = [21, 135, 229]
+    color = np.array([21, 135, 229])
 
     def debugRect(self):
         return self.finishRect
@@ -27,10 +27,17 @@ class StartWatcher(Watcher):
                 self.manager.state('raceStatus', "started")
             
         else:
-            finishCropped = cv2.Canny(util.crop(self.window, np.hstack(self.finishRect) + (-5, -5, 10, 10)), 350, 200)
-            vals = scipy.signal.correlate2d(finishCropped, finishTemplate, mode="valid")
+            cropped = util.crop(self.window, np.hstack(self.finishRect) + (-5, -5, 10, 10))
+            threshold = 25
+            # three channels
+            numPixels = cropped.size / 3
+            numOrangeish = np.sum(np.logical_and(np.all(cropped > (self.color - threshold), axis=2), np.all(cropped < (self.color + threshold), axis=2)))
+            if numOrangeish / float(numPixels) > .15:
+                finishCropped = cv2.Canny(cropped, 350, 200)
+                vals = scipy.signal.correlate2d(finishCropped, finishTemplate, mode="valid")
 
-            if (np.max(vals) > 230):
-                self.manager.state('raceStatus', 'finished')
+                if (np.max(vals) > 210):
+                    if self.manager.state('raceStatus') != 'finished':
+                        self.manager.state('raceStatus', 'finished')
 
 export = StartWatcher

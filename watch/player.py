@@ -5,10 +5,11 @@ import numpy as np
 from watch.players.place import PlaceWatcher
 from watch.players.lap import LapWatcher
 from watch.players.start import StartWatcher
+from watch.players.hazard import HazardWatcher
 import util
 from collections import deque
 
-watcherClasses = [PlaceWatcher, LapWatcher, StartWatcher]
+watcherClasses = [PlaceWatcher, LapWatcher, StartWatcher, HazardWatcher]
 
 class PlayersManager(Manager, Watcher):
     current = None

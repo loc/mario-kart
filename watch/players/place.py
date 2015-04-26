@@ -27,6 +27,11 @@ class PlaceWatcher(Watcher):
         super(PlaceWatcher, self).__init__()
         self.lastRank = None
     
+    def shouldWatch(self):
+        raceStatus = self.manager.state('raceStatus')
+        # could finish while in a hazard
+        return raceStatus == 'started' or raceStatus == 'hazard'
+
     def debugRect(self):
         return (tuple(self.topLeft[self.direction]), tuple(size))
 
