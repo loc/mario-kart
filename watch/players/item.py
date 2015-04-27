@@ -23,12 +23,10 @@ for filename in templateFiles:
     ghist.append(cv2.calcHist([im],[1],None,[32], [0,256]))
     rhist.append(cv2.calcHist([im],[2],None,[32], [0,256]))
 
+
+size = np.max([template.shape[::-1] for template in templates], 0)[1:] + 1
     
 #capture screen region
-
-
-size = 0
-
 
 class ItemWatcher(Watcher):
     #predicate = {"mode": "racing"}
@@ -52,8 +50,10 @@ class ItemWatcher(Watcher):
         bcor = []
         gcor = []
         rcor = []
+        print size
         #not quite sure ask
         crop = util.crop(win, np.hstack((self.topLeft[self.direction], size)))
+        print crop.shape
         bvec = cv2.calcHist([crop],[0],None,[32],[0,256])
         gvec = cv2.calcHist([crop],[1],None,[32],[0,256])
         rvec = cv2.calcHist([crop],[2],None,[32],[0,256])
