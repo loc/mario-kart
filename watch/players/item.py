@@ -23,10 +23,10 @@ for filename in templateFiles:
     ghist.append(cv2.calcHist([im],[1],None,[32], [0,256]))
     rhist.append(cv2.calcHist([im],[2],None,[32], [0,256]))
 
-
 size = np.max([template.shape[::-1] for template in templates], 0)[1:] + 1
     
 #capture screen region
+
 
 class ItemWatcher(Watcher):
     #predicate = {"mode": "racing"}
