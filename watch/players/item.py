@@ -1,8 +1,8 @@
-#from watcher import Watcher
+from watcher import Watcher
 import operator
 import numpy as np
 import cv2
-#import util
+import util
 import scipy
 
 templateFiles = ["banana.jpg", "blooper.jpg", "blue-shell.jpg","bob-omb.jpg","bullet-bill.jpg","fakebox.jpg","gold-mushroom.jpg", \
@@ -25,7 +25,6 @@ for filename in templateFiles:
 
     
 #capture screen region
-
 
 
 size = 0
@@ -68,10 +67,15 @@ class ItemWatcher(Watcher):
         for i in range(0,len(templateFiles)):
             if (bcor[i]+gcor[i]+rcor[i]) > (bcor[min]+gcor[min]+rcor[min]):
                 min = i
+           
         #check relevance
-        self.manager.state('rank', self.currentRank)
-        self.manager.state('rankCertainty', certainty)
-
-        self.item = (templateFiles[min])[:-4]
+        #self.manager.state('rank', self.currentRank)
+        #self.manager.state('rankCertainty', certainty)
+        if (item == None and (bcor[min] + gcor[min] + rcor[min]) >= 2):
+            self.item = (templateFiles[min])[:-4]
+            self.manager.state('item', self.item)
+        elif (item != None and (bcor[min] + gcor[min] + rcor[min]) < 2):
+            self.item = None
+            self.manager.state('item', None)
 
 export = ItemWatcher

@@ -5,10 +5,11 @@ import numpy as np
 from watch.players.place import PlaceWatcher
 from watch.players.lap import LapWatcher
 from watch.players.start import StartWatcher
+from watch.players.item import ItemWatcher
 import util
 from collections import deque
 
-watcherClasses = [PlaceWatcher, LapWatcher, StartWatcher]
+watcherClasses = [PlaceWatcher, LapWatcher, StartWatcher, ItemWatcher]
 
 class PlayersManager(Manager, Watcher):
     current = None
@@ -95,7 +96,8 @@ class PlayersManager(Manager, Watcher):
                     previous = player.state('rank')
                     if previous != rank:
                         player.state('rank', rank)
-
+            #for i, player in zip(range(len(self.players)), self.players):
+               # if 
 
 class PlayerManager(Manager):
 
@@ -124,7 +126,7 @@ class PlayerManager(Manager):
         self.unset('rank')
         self.unset('rankUncertainty')
         self.unset('unverifiedRank')
-
+        self.unset('item')
     def rankChanged(self, value):
         print self.frameNumber, "rank", value, self.id
 
@@ -140,6 +142,8 @@ class PlayerManager(Manager):
         cropped = util.cropRect(frame, self.rect)
         super(PlayerManager, self).broadcastFrame(cropped)
         self.drawDebugRects(frame)
-
-        
+    def itemGained(self, value):
+        print self.frameNumber, "item", value, self.id
+    def itemUsed(self, value):
+        print self.frameNumber, "item used", value, self.id
 export = PlayersManager
