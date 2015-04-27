@@ -135,6 +135,9 @@ class PlayerManager(Manager):
     def raceStatusChanged(self, value):
         print self.frameNumber, "race", value, self.id
 
+    def raceHazardChanged(self, value):
+        print self.frameNumber, "race", "hazard", self.id
+
     def broadcastFrame(self, frame):
         self.hasReset = False
         self.frameNumber = self.screenManager.frameNumber

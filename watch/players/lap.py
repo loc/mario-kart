@@ -14,7 +14,7 @@ for filename in templateFiles:
 size = np.max([template.shape[::-1] for template in templates], 0)
 
 class LapWatcher(Watcher):
-    predicate = {"raceStatus": "started"}
+    predicate = {"raceStatus": "started", "raceHazard": None}
     debug = True
     topLeft = {"left": (75, 120), "right": (329,120)}
 
@@ -42,7 +42,6 @@ class LapWatcher(Watcher):
         #if self.manager.id == 2:
         #  print vals
 
-
         self.lap = np.argmax(vals) + 1
         if self.lastLap == self.lap:
           self.verified += 1
@@ -51,6 +50,5 @@ class LapWatcher(Watcher):
           self.lastLap = self.lap
         if self.verified > 2:
           self.manager.state('lap', self.lap);
-
 
 export = LapWatcher

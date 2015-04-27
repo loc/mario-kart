@@ -16,7 +16,7 @@ c = 0
 
 
 class PlaceWatcher(Watcher):
-    predicate = {"raceStatus": "started"}
+    predicate = {"raceStatus": "started", "raceHazard": None}
     #predicate = {"mode": "racing"}
     #rect = ((66, 166), (122,225))
     debug = True

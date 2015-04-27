@@ -17,14 +17,15 @@ class HazardWatcher(Watcher):
 
         if avg < self.high:
             # pause the other watchers if we're in danger of a hazard
-            self.manager.state('raceStatus', 'hazard', supress=True)
+            self.manager.state('raceHazard', 'hazard', supress=True)
             # verify over some number of frames that it actually is a hazard
             if avg < self.low and self.count != self.numFrames:
                 self.count += 1
                 if self.count == self.numFrames:
-                    self.manager.state('raceStatus', 'hazard', force=True)
+                    self.manager.state('raceHazard', 'hazard', force=True)
 
         else:
             self.count = 0
             if avg > 40:
-                self.manager.state('raceStatus', 'started', supress=True)
+                if self.manager.state('raceHazard'):
+                    self.manager.unset('raceHazard')
