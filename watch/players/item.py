@@ -60,9 +60,9 @@ class ItemWatcher(Watcher):
         #area = cv2.Canny(crop, 350, 300)
         #calculate minimum correlation maybe overcomplicated
         for i in range(0,len(templateFiles)):
-            bcor.append(cv2.compareHist(bvec,bhist[i],cv2.CV_COMP_CORREL))
-            gcor.append(cv2.compareHist(gvec,ghist[i],cv2.CV_COMP_CORREL))
-            rcor.append(cv2.compareHist(rvec,rhist[i],cv2.CV_COMP_CORREL))
+            bcor.append(cv2.compareHist(bvec,bhist[i],cv2.cv.CV_COMP_CORREL))
+            gcor.append(cv2.compareHist(gvec,ghist[i],cv2.cv.CV_COMP_CORREL))
+            rcor.append(cv2.compareHist(rvec,rhist[i],cv2.cv.CV_COMP_CORREL))
         min = 0;
         for i in range(0,len(templateFiles)):
             if (bcor[i]+gcor[i]+rcor[i]) > (bcor[min]+gcor[min]+rcor[min]):
@@ -71,10 +71,10 @@ class ItemWatcher(Watcher):
         #check relevance
         #self.manager.state('rank', self.currentRank)
         #self.manager.state('rankCertainty', certainty)
-        if (item == None and (bcor[min] + gcor[min] + rcor[min]) >= 2):
+        if (self.item == None and (bcor[min] + gcor[min] + rcor[min]) >= 2):
             self.item = (templateFiles[min])[:-4]
             self.manager.state('item', self.item)
-        elif (item != None and (bcor[min] + gcor[min] + rcor[min]) < 2):
+        elif (self.item != None and (bcor[min] + gcor[min] + rcor[min]) < 2):
             self.item = None
             self.manager.state('item', None)
 

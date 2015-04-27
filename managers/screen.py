@@ -15,7 +15,7 @@ class ScreenManager(Manager):
         else:
             self.cap = cv2.VideoCapture(filename)
         super(ScreenManager, self).__init__()
-        self.states = {"mode": "unknown"}
+        self.states = {"mode": "transition"}
 
     def loop(self):
         while self.cap.isOpened():

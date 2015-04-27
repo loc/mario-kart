@@ -32,7 +32,7 @@ bcor = []
 gcor = []
 rcor = []
 #not quite sure ask
-crop = cv2.imread("triple-banana.jpg",cv2.IMREAD_COLOR)
+crop = cv2.imread("green-shell.jpg",cv2.IMREAD_COLOR)
 bvec = (cv2.calcHist([crop],[0],None,[32],[0,256]))
 gvec = (cv2.calcHist([crop],[1],None,[32],[0,256]))
 rvec = (cv2.calcHist([crop],[2],None,[32],[0,256]))
@@ -44,14 +44,14 @@ for i in range(0,len(templateFiles)):
     rcor.append(cv2.compareHist(rvec,rhist[i],cv2.cv.CV_COMP_CORREL))
 min = 0;
 for i in range(0,len(templateFiles)):
-    if (2*bcor[i]+gcor[i]+2*rcor[i]) > (bcor[min]+gcor[min]+2*rcor[min]):
+    if (bcor[i]+.5*gcor[i]+rcor[i]) > (bcor[min]+.5*gcor[min]+rcor[min]) and bcor[i] + gcor[i] + rcor[i] != 3 :
         min = i
 #check relevance
 #self.manager.state('rank', self.currentRank)
 #self.manager.state('rankCertainty', certainty)
-print bcor[min] + gcor[min] + rcor[min]
-print bvec, gvec, rvec
-print bhist[min], ghist[min], rhist[min]
+for  i in range(0, len(templateFiles)):
+    print bcor[i] + .5*gcor[i] + rcor[i]
+#print bhist[min], ghist[min], rhist[min]
 print (templateFiles[min])[:-4]
 #print bcor
 #print gcor

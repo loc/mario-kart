@@ -8,7 +8,7 @@ from managers.screen import ScreenManager
 
 
 #manager = ScreenManager('rtmp://192.168.89.160:1935/live/test')
-manager = ScreenManager('bowsers-castle.mp4')
+manager = ScreenManager('rainbow.mp4')
 manager.state('playerCount', 4)
 for Watcher in watchers:
     watcher = Watcher()
