@@ -13,7 +13,8 @@ class ScreenManager(Manager):
         if filename.startswith('rtmp'):
             self.cap = RTMPCapture(filename)
         else:
-            self.cap = cv2.VideoCapture(filename)
+            #self.cap = cv2.VideoCapture(filename)
+            self.cap = RTMPCapture(filename)
         super(ScreenManager, self).__init__()
         self.states = {"mode": "unknown"}
 
@@ -30,10 +31,12 @@ class ScreenManager(Manager):
 
                 self.broadcastFrame(frame)
 
-                self.drawDebugRects(frame)
-                cv2.imshow('frame', frame)
-            if cv2.waitKey(1)==27:
-                break
+                #self.drawDebugRects(frame)
+                #cv2.imshow('frame', frame)
+            #else:
+            #    print "fail"
+            #if cv2.waitKey(1)==27:
+            #    break
 
         self.cleanup()
 

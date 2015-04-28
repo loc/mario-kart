@@ -12,6 +12,7 @@ class RTMPCapture():
             self.size = size
 
         command = [ "ffmpeg",
+                   "-loglevel", "panic",
                     #"-pix_fmt", "yuv420p",
                     "-i", url,
                     '-vf', 'scale=%d:%d'%self.size[-2::-1],

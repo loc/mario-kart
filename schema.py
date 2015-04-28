@@ -1,6 +1,6 @@
 from sqlalchemy import *
 
-engine = create_engine('sqlite:///kart.db', echo=True)
+engine = create_engine('sqlite:///kart.db')
 metadata = MetaData()
 
 races = Table('races', metadata,
@@ -26,5 +26,12 @@ hazards = Table('hazards', metadata,
              Column('race_id', Integer, ForeignKey('races.id'), primary_key=True),
              Column('timestamp', Float, primary_key=True),
              Column('player', Integer, primary_key=True))
+
+players = Table('players', metadata,
+                Column('set_id', Integer),
+                Column('player', Integer),
+                Column('name', String(100), nullable=True),
+                Column('character', String(100), nullable=True),
+                Column('vehicle', String(100), nullable=True))
 
 metadata.create_all(engine, checkfirst=True) 

@@ -7,16 +7,27 @@ import datetime
 
 conn = engine.connect()
 
-setId = 1
-conn.execute(races.insert(), set_id=setId, date=datetime.date.today())
-stmt = select([races]).order_by(desc("id"))
-race = conn.execute(stmt).fetchone()
+names = ["Joe", "Vince", "Chris", "Andy"]
+characters = ["Funky Kong", "Bowser Jr.", "Baby Mario", "Mario"]
+vehicles = ["Flame Runner", "Mach Bike", "Blue Falcon", "Wild Wing"]
 
-state = {
-    "started": False,
-    "startFrame": None,
-    "players": [{},{},{},{}]
-}
+setId = int(sys.argv[2])
+state, race = None, None
+
+def reset():
+    state = {
+        "started": False,
+        "startFrame": None,
+        "players": [{},{},{},{}]
+    }
+    conn.execute(races.insert(), set_id=setId, date=datetime.date.today())
+    stmt = select([races]).order_by(desc("id"))
+    race = conn.execute(stmt).fetchone()
+    return race, state 
+
+race, state = reset()
+for index, (name, character, vehicle) in enumerate(zip(names, characters, vehicles)):
+    conn.execute(players.insert(), set_id=setId, player=index, name=name, character=character, vehicle=vehicle)
 
 def getFrameElapse(start, end):
     return (end - start) / 30.0
@@ -27,7 +38,7 @@ def updateLap(frame, lap, playerNum):
     if "lap" in player:
         current = player["lap"]
         elapsed = getFrameElapse(player["lapFrame"], frame)
-        if lap > current:
+        if lap == current + 1 and elapsed > 20:
             sinceBegin = getFrameElapse(state["startFrame"], player["lapFrame"])
             print "lap:", lap-1, "player:", playerNum, "elapsed:", elapsed
             try: 
@@ -72,14 +83,13 @@ def finish(frame, playerNum):
 def hazard(frame, playerNum):
     player = state["players"][playerNum]
 
-    if "finished" not in player:
+    if state["startFrame"] and "finished" not in player:
         if "hazards" not in player:
             player["hazards"] = 1
         else:
             player["hazards"] += 1
-
-    conn.execute(hazards.insert(), race_id=race.id, player=playerNum, timestamp=getFrameElapse(state["startFrame"], frame))
-    print "hazard", "player:", playerNum, "time:", getFrameElapse(state["startFrame"], frame)
+        conn.execute(hazards.insert(), race_id=race.id, player=playerNum, timestamp=getFrameElapse(state["startFrame"], frame))
+        print "hazard", "player:", playerNum, "time:", getFrameElapse(state["startFrame"], frame)
 
 def rankUpdate(frame, rank, playerNum):
     player = state["players"][playerNum]
@@ -103,7 +113,10 @@ def rankUpdate(frame, rank, playerNum):
     player["rank"] = rank
 
 def endRace(frame):
+    global state
+    global race
     elapsed = getFrameElapse(state["startFrame"], frame)
+    race, state = reset()
 
 with open(sys.argv[1], 'r') as f:
     for line in f:
