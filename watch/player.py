@@ -11,14 +11,12 @@ import util
 from collections import deque
 
 watcherClasses = [PlaceWatcher, LapWatcher, StartWatcher, HazardWatcher, ItemWatcher]
-
 class PlayersManager(Manager, Watcher):
     current = None
    # debug = True
     players = []
     verified = 0
     lastRanks = [None] * 4
-
     def __init__(self):
         super(PlayersManager, self).__init__()
 
@@ -97,8 +95,7 @@ class PlayersManager(Manager, Watcher):
                     previous = player.state('rank')
                     if previous != rank:
                         player.state('rank', rank)
-            #for i, player in zip(range(len(self.players)), self.players):
-               # if 
+
 
 class PlayerManager(Manager):
 
@@ -147,9 +144,10 @@ class PlayerManager(Manager):
         super(PlayerManager, self).broadcastFrame(cropped)
         self.drawDebugRects(frame)
 
-    def itemGained(self, value):
-        print self.frameNumber, "item", value, self.id
+    def itemChanged(self, value):
+        if value == 'None':
+            print self.frameNumber, "item used or lost", value, self.id
+        else:
+            print self.frameNumber, "item gained", value, self.id
 
-    def itemUsed(self, value):
-        print self.frameNumber, "item used", value, self.id
 export = PlayersManager

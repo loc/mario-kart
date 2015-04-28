@@ -16,7 +16,7 @@ size = np.max([template.shape[::-1] for template in templates], 0)
 class LapWatcher(Watcher):
     predicate = {"raceStatus": "started", "raceHazard": None}
     debug = True
-    topLeft = {"left": (75, 120), "right": (329,120)}
+    topLeft = {"left": (50, 120), "right": (250,120)}
 
     def __init__(self):
         super(LapWatcher, self).__init__()
@@ -26,7 +26,7 @@ class LapWatcher(Watcher):
     def debugRect(self):
         return (tuple(self.topLeft[self.direction]), tuple(size))
 
-    def update(self):
+    def update(self):   
 
         gray = cv2.cvtColor(self.window, cv2.COLOR_BGR2GRAY)
         win = gray
@@ -34,7 +34,6 @@ class LapWatcher(Watcher):
 
         crop = util.crop(win, np.hstack((self.topLeft[self.direction], size)) + (-5, -5, 10, 10))
         area = cv2.Canny(crop, 400, 300)
-
         for index, template in enumerate(templates): 
             val = np.max(scipy.signal.correlate2d(area, template, mode="valid"))/float(np.sum(template))
             vals.append(val)

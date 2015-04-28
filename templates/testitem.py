@@ -3,15 +3,15 @@ import operator
 import numpy as np
 import cv2
 #import util
-import scipy
+from scipy import signal
 
 rhist = []
 ghist = []
 bhist = []
 
-templateFiles = ["banana.jpg", "blooper.jpg", "blue-shell.jpg","bob-omb.jpg","bullet-bill.jpg","fakebox.jpg","gold-mushroom.jpg", \
-                        "green-shell.jpg","mega-mushroom.jpg","mushroom.jpg","pow-block.jpg","red-shell.jpg","star.jpg","thunderbolt.jpg", \
-                        "thundercloud.jpg","triple-banana.jpg","triple-green-shell.jpg","triple-mushroom.jpg","triple-red-shell.jpg"]
+templateFiles = ["banana-c.jpg", "blooper-c.jpg", "blue-shell-c.jpg","bob-omb-c.jpg","bullet-bill-c.jpg","fakebox-c.jpg","gold-mushroom-c.jpg", \
+                        "green-shell-c.jpg","mega-mushroom-c.jpg","mushroom-c.jpg","pow-block-c.jpg","red-shell-c.jpg","star-c.jpg","thunderbolt-c.jpg", \
+                        "thundercloud-c.jpg","triple-banana-c.jpg","triple-green-shell-c.jpg","triple-mushroom-c.jpg","triple-red-shell-c.jpg"]
 templates = []
 
 
@@ -32,7 +32,7 @@ bcor = []
 gcor = []
 rcor = []
 #not quite sure ask
-crop = cv2.imread("green-shell.jpg",cv2.IMREAD_COLOR)
+crop = cv2.imread("test-blue-shell.jpg",cv2.IMREAD_COLOR)
 bvec = (cv2.calcHist([crop],[0],None,[32],[0,256]))
 gvec = (cv2.calcHist([crop],[1],None,[32],[0,256]))
 rvec = (cv2.calcHist([crop],[2],None,[32],[0,256]))
@@ -56,3 +56,27 @@ print (templateFiles[min])[:-4]
 #print bcor
 #print gcor
 #print rcor
+
+templates = []
+#darkWeights = (0.2, 0.1, 0.5, 0.0)
+
+for filename in templateFiles:
+    templates.append(cv2.Canny(cv2.imread(filename, cv2.IMREAD_GRAYSCALE), 350, 200))
+
+#size = np.max([template.shape[::-1] for template in templates], 0) + 1
+c = 0
+crop = cv2.imread("test-blue-shell.jpg",cv2.IMREAD_COLOR)
+gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+win = gray
+vals = []
+
+area = cv2.Canny(win, 350, 300)
+luminance = np.mean(win)
+lumWeight = np.clip((1-((luminance-30)/80)), 0, 1)
+for index, template in enumerate(templates):
+    #darkWeight = darkWeights[index] * lumWeight
+    val = np.max(signal.correlate2d(area, template)/float(np.sum(template)))
+    vals.append(val)#    + (val * darkWeight))
+
+print (templateFiles[np.argmax(vals) + 1])[:-4]
+print vals
