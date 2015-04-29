@@ -21,11 +21,9 @@ class TransitionWatcher(Watcher):
             if self.frame < self.numOutFrame:
                 self.frame += 1
             else:
-                self.manager.state('mode', 'unknown')
+                self.manager.state('mode', 'unknown', supress=True)
         elif isBlack:
             self.frame = 0
             self.manager.state('mode', 'transition')
-
-
 
 export = TransitionWatcher

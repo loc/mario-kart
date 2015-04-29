@@ -3,6 +3,8 @@ import cv2.cv as cv
 from manager import Manager
 import util
 from video import RTMPCapture
+import signal
+from functools import partial
 
 class ScreenManager(Manager):
     debugRect = None
@@ -16,7 +18,9 @@ class ScreenManager(Manager):
             #self.cap = cv2.VideoCapture(filename)
             self.cap = RTMPCapture(filename)
         super(ScreenManager, self).__init__()
+        self.shouldQuit = False
         self.states = {"mode": "unknown"}
+        signal.signal(signal.SIGINT, partial(self.quit, self))
 
     def loop(self):
         while self.cap.isOpened():
@@ -37,6 +41,8 @@ class ScreenManager(Manager):
             #    print "fail"
             #if cv2.waitKey(1)==27:
             #    break
+            if self.shouldQuit:
+                break
 
         self.cleanup()
 
@@ -44,8 +50,12 @@ class ScreenManager(Manager):
         self.cap.release()
         cv2.destroyAllWindows()
 
+    def quit(self, *args):
+        print "# User interrupt"
+        self.shouldQuit = True
+
     def modeChanged(self, value):
-        print "# mode changed:", value
+        print self.frameNumber, "mode", value
 
     def addWatcher(self, watcher):
         super(ScreenManager, self).addWatcher(watcher)
