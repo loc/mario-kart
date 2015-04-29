@@ -29,8 +29,8 @@ size = np.min([template.shape[::-1] for template in templates], 0)[1:] + 1
 #size = (50 55)
 #capture screen region
 
-for filename in templateFiles:
-    templatesc.append(cv2.Canny(cv2.imread("templates/" + filename, cv2.IMREAD_GRAYSCALE), 350, 200))
+#for filename in templateFiles:
+#    templatesc.append(cv2.Canny(cv2.imread("templates/" + filename, cv2.IMREAD_GRAYSCALE), 350, 200))
 
 #size = np.max([template.shape[::-1] for template in templates], 0) + 1
 c = 0
@@ -41,11 +41,11 @@ class ItemWatcher(Watcher):
     debug = True
     topLeft = {"left": (23, 8), "right": (233,8)}
     #darkWeights = (0.2, 0.1, 0.5, 0.0)
-
+    
     def __init__(self):
         super(ItemWatcher, self).__init__()
         self.item = 'None'
-    
+        self.duration = 0
     def debugRect(self):
         return (tuple(self.topLeft[self.direction]), tuple(size))
         
@@ -67,7 +67,6 @@ class ItemWatcher(Watcher):
         bvec = cv2.calcHist([crop],[0],None,[32],[0,256])
         gvec = cv2.calcHist([crop],[1],None,[32],[0,256])
         rvec = cv2.calcHist([crop],[2],None,[32],[0,256])
-        #area = cv2.Canny(crop, 350, 300)
         #calculate minimum correlation maybe overcomplicated
         for i in range(0,len(templateFiles)):
             bcor.append(cv2.compareHist(bvec,bhist[i],cv2.cv.CV_COMP_CORREL))
@@ -77,29 +76,23 @@ class ItemWatcher(Watcher):
         for i in range(0,len(templateFiles)):
             if (bcor[i]+gcor[i]+rcor[i]) > (bcor[min]+gcor[min]+rcor[min]):
                 min = i
+        #tries to ensure that random frames don't throw off the itemwatcher, also can be used to check if the item has "settled" instead of picking up the randomization process
         
-        if (self.item == 'None' and (bcor[min] + gcor[min] + rcor[min]) >= 2.8):
-            self.item = (templateFiles[min])[:-4]
-            self.manager.state('item', self.item)
-        elif (self.item != 'None' and (bcor[min] + gcor[min] + rcor[min]) < 2.8):
+        if (self.item == 'None' and (bcor[min] + gcor[min] + rcor[min]) >= 2.85):
+            self.item = (templateFiles[min])[:-6]
+            self.duration = self.duration + 1
+            
+        elif (self.item == 'None' and (bcor[min] + gcor[min] + rcor[min]) < 2.85):
+            self.duration = 0
+        elif (self.item != 'None' and (bcor[min] + gcor[min] + rcor[min]) >= 2.85):
+            if self.item == templateFiles[min][:-6] and self.duration >= 3:
+                self.manager.state('item', self.item)
+            else:
+                self.item = templateFiles[min][:-6] 
+                self.duration = self.duration + 3
+        elif (self.item != 'None' and (bcor[min] + gcor[min] + rcor[min]) < 2.85):
             self.item = 'None'
-            self.manager.state('item', 'None')
-        '''
-        cor = bcor[min] + gcor[min] + rcor[min]
-        gray = cv2.cvtColor(self.window, cv2.COLOR_BGR2GRAY)
-        win = gray
-        vals = []
-
-        crop = util.crop(win, np.hstack((self.topLeft[self.direction], size)))
-        area = cv2.Canny(crop, 350, 300)
-        luminance = np.mean(crop)
-        lumWeight = np.clip((1-((luminance-30)/80)), 0, 1)
-        for index, template in enumerate(templatesc):
-            #darkWeight = self.darkWeights[index] * lumWeight
-            val = np.max(scipy.signal.correlate2d(area, template)/float(np.sum(template)))
-            vals.append(val) # + (val * darkWeight))
-        if cor > 2.5:
-            self.item = (templateFiles[np.argmax(vals) + 1])[:-4]
-            self.manager.state('item',self.item)
-        '''
+            self.duration = 0
+            if self.duration >= 3:
+                self.manager.state('item', 'None')\
 export = ItemWatcher
