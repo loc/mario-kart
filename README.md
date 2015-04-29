@@ -1,4 +1,4 @@
-Better README coming soon...
+Best Mario Kart Wii CV EVER
 
 # OSX Install
 ## Prereqs
@@ -38,7 +38,7 @@ rtmp {
                 listen 1935;
                 chunk_size 4096;
                 application castle {
-                        play /path/to/mario-kart/bowsers-castle.mp4;
+                        play /path/to/mario-kart;
                 }
         }
 }
@@ -56,8 +56,7 @@ nginx -s stop
 ```
 
 Make sure you can watch the video:
-... this doesn't work yet
 ```
 brew install mplayer
-mplayer rtmp://localhost:1935/castle -framedrop
+mplayer rtmp://127.0.0.1:1935/castle/bowsers-castle.mp4
 ```
