@@ -35,6 +35,7 @@ python read.py bowsers-castle.mp4
 ```
 
 # To use with streaming
+You need `ffmpeg` installed to read from streams.
 nginx has a nice rtmp server that can allow redirecting and incoming streams.
 
 Setup nginx with `brew` and setup a config
@@ -71,5 +72,6 @@ mplayer rtmp://127.0.0.1:1935/castle/bowsers-castle.mp4
 
 Read from the stream:
 ```
+brew install ffmpeg
 python read.py rtmp://127.0.0.1:1935/castle/bowsers-castle.mp4
 ```
