@@ -6,10 +6,11 @@ import operator
 from watch import watchers
 from managers.screen import ScreenManager
 import sys
+from args import args
 
 
 #manager = ScreenManager('rtmp://192.168.89.160:1935/live/test')
-manager = ScreenManager(sys.argv[1])
+manager = ScreenManager(args.input)
 manager.state('playerCount', 4)
 for Watcher in watchers:
     watcher = Watcher()

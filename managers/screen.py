@@ -5,6 +5,7 @@ import util
 from video import RTMPCapture
 import signal
 from functools import partial
+from args import args
 
 class ScreenManager(Manager):
     debugRect = None
@@ -35,12 +36,11 @@ class ScreenManager(Manager):
 
                 self.broadcastFrame(frame)
 
-                #self.drawDebugRects(frame)
-                #cv2.imshow('frame', frame)
-            #else:
-            #    print "fail"
-            #if cv2.waitKey(1)==27:
-            #    break
+            if args.debug:
+                self.drawDebugRects(frame)
+                cv2.imshow('frame', frame)
+                if cv2.waitKey(1)==27:
+                    break
             if self.shouldQuit:
                 break
 
