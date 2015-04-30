@@ -8,9 +8,9 @@ import numpy.linalg as la
 class ModeWatcher(Watcher):
     predicate = {"mode": "unknown"}
     setupRect = ((20, 10), (550,20))
-    overviewRect = ((550, 410), (200, 30))
+    overviewRect = ((550, 410), (280, 30))
     debug = True
-    setupThreshold = 240
+    setupThreshold = 243
     lastMode = None
 
     def debugRect(self):
