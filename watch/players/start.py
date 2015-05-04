@@ -4,6 +4,7 @@ import cv2
 import numpy.linalg as la 
 import util
 import scipy
+import scipy.signal
 
 goTemplate = cv2.Canny(cv2.imread("templates/go.jpg", cv2.IMREAD_GRAYSCALE), 270, 200)
 finishTemplate = cv2.Canny(cv2.imread("templates/finish.jpg", cv2.IMREAD_GRAYSCALE), 300, 200)

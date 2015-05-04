@@ -6,6 +6,7 @@ from video import RTMPCapture
 import signal
 from functools import partial
 from args import args
+from logger import log
 
 class ScreenManager(Manager):
     debugRect = None
@@ -51,11 +52,11 @@ class ScreenManager(Manager):
         cv2.destroyAllWindows()
 
     def quit(self, *args):
-        print "# User interrupt"
+        log("# User interrupt")
         self.shouldQuit = True
 
     def modeChanged(self, value):
-        print self.frameNumber, "mode", value
+        log(self.frameNumber, "mode", value)
 
     def addWatcher(self, watcher):
         super(ScreenManager, self).addWatcher(watcher)

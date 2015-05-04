@@ -8,6 +8,7 @@ from watch.players.start import StartWatcher
 from watch.players.hazard import HazardWatcher
 import util
 from collections import deque
+from logger import log
 
 watcherClasses = [PlaceWatcher, LapWatcher, StartWatcher, HazardWatcher]
 
@@ -127,16 +128,16 @@ class PlayerManager(Manager):
         self.unset('unverifiedRank')
 
     def rankChanged(self, value):
-        print self.frameNumber, "rank", value, self.id
+        log(self.frameNumber, "rank", value, self.id)
 
     def lapChanged(self, value):
-        print self.frameNumber, "lap", value, self.id 
+        log(self.frameNumber, "lap", value, self.id)
 
     def raceStatusChanged(self, value):
-        print self.frameNumber, "race", value, self.id
+        log(self.frameNumber, "race", value, self.id)
 
     def raceHazardChanged(self, value):
-        print self.frameNumber, "race", "hazard", self.id
+        log(self.frameNumber, "race", "hazard", self.id)
 
     def broadcastFrame(self, frame):
         self.hasReset = False

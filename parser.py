@@ -4,122 +4,139 @@ import sys
 from schema import *
 import sqlalchemy
 import datetime
+from queue import queue
+from Queue import Empty as QueueEmpty
 
-conn = engine.connect()
+conn = None
+
+shouldWait = True
 
 names = ["Joe", "Vince", "Chris", "Andy"]
 characters = ["Funky Kong", "Bowser Jr.", "Baby Mario", "Mario"]
 vehicles = ["Flame Runner", "Mach Bike", "Blue Falcon", "Wild Wing"]
 
-setId = int(sys.argv[2])
+setId = int(15)
 state, race = None, None
 
-def reset():
-    state = {
-        "started": False,
-        "startFrame": None,
-        "players": [{},{},{},{}]
-    }
-    conn.execute(races.insert(), set_id=setId, date=datetime.date.today())
-    stmt = select([races]).order_by(desc("id"))
-    race = conn.execute(stmt).fetchone()
-    return race, state 
+class Parser():
 
-race, state = reset()
-for index, (name, character, vehicle) in enumerate(zip(names, characters, vehicles)):
-    conn.execute(players.insert(), set_id=setId, player=index, name=name, character=character, vehicle=vehicle)
+    def __init__(self):
+        self.db = Database()
+        self.conn = self.db.engine.connect()
 
-def getFrameElapse(start, end):
-    return (end - start) / 30.0
+        self.reset()
+        for index, (name, character, vehicle) in enumerate(zip(names, characters, vehicles)):
+            self.conn.execute(self.db.players.insert(), set_id=setId, player=index, name=name, character=character, vehicle=vehicle)
 
-def updateLap(frame, lap, playerNum):
-    player = state["players"][playerNum]
+    def reset(self):
+        self.state = {
+            "started": False,
+            "startFrame": None,
+            "players": [{},{},{},{}]
+        }
+        self.conn.execute(self.db.races.insert(), set_id=setId, date=datetime.date.today())
+        stmt = select([self.db.races]).order_by(desc("id"))
+        self.race = self.conn.execute(stmt).fetchone()
+        return self.race, self.state 
 
-    if "lap" in player:
-        current = player["lap"]
-        elapsed = getFrameElapse(player["lapFrame"], frame)
-        if lap == current + 1 and elapsed > 20:
-            sinceBegin = getFrameElapse(state["startFrame"], player["lapFrame"])
-            print "lap:", lap-1, "player:", playerNum, "elapsed:", elapsed
-            try: 
-                conn.execute(laps.insert(), race_id=race.id, elapsed=elapsed, timestamp=sinceBegin, lap=lap-1, player=playerNum)
-            except sqlalchemy.exc.IntegrityError:
-                print "Integrity error", "lap", lap-1, "player", playerNum, "elapsed", elapsed
-        else:
-            player["lap"] = lap
+    def getFrameElapse(self, start, end):
+        return (end - start) / 30.0
+
+    def updateLap(self, frame, lap, playerNum):
+        player = self.state["players"][playerNum]
+
+        if "lap" in player:
+            current = player["lap"]
+            elapsed = self.getFrameElapse(player["lapFrame"], frame)
+            if lap == current + 1 and elapsed > 20:
+                sinceBegin = self.getFrameElapse(self.state["startFrame"], player["lapFrame"])
+                print "lap:", lap-1, "player:", playerNum, "elapsed:", elapsed
+                try: 
+                    self.conn.execute(self.db.laps.insert(), race_id=self.race.id, elapsed=elapsed, timestamp=sinceBegin, lap=lap-1, player=playerNum)
+                except sqlalchemy.exc.IntegrityError:
+                    print "Integrity error", "lap", lap-1, "player", playerNum, "elapsed", elapsed
+            else:
+                player["lap"] = lap
+                return
+
+        player["lap"] = lap
+        player["lapFrame"] = frame
+
+    def startRace(self, frame):
+        if self.state["startFrame"]:
             return
 
-    player["lap"] = lap
-    player["lapFrame"] = frame
+        self.state["startFrame"] = frame
 
-def startRace(frame):
-    if state["startFrame"]:
-        return
+        for i in range(4):
+            self.updateLap(frame, 1, i)
 
-    state["startFrame"] = frame
+    def finish(self, frame, playerNum):
+        player = self.state["players"][playerNum]
+        hazard = 0
 
-    for i in range(4):
-        updateLap(frame, 1, i)
+        if "hazards" in player:
+            hazard = player["hazards"]
 
-def finish(frame, playerNum):
-    player = state["players"][playerNum]
-    hazard = 0
+        player["finished"] = True
+        self.updateLap(frame, 4, playerNum)
+        self.rankUpdate(frame, player["rank"], playerNum)
 
-    if "hazards" in player:
-        hazard = player["hazards"]
-
-    player["finished"] = True
-    updateLap(frame, 4, playerNum)
-    rankUpdate(frame, player["rank"], playerNum)
-
-    raceTime = getFrameElapse(state["startFrame"], player["lapFrame"])
+        raceTime = self.getFrameElapse(self.state["startFrame"], player["lapFrame"])
 
 
-    print "race", race.id, "player:", playerNum, "hazard:", hazard, "rank:", player["rank"], "time:", raceTime, "times:", player["rankTimes"]
+        print "race", self.race.id, "player:", playerNum, "hazard:", hazard, "rank:", player["rank"], "time:", raceTime, "times:", player["rankTimes"]
 
-    if all(["finished" in p for p in state["players"]]):
-        endRace(frame)
+        if all(["finished" in p for p in self.state["players"]]):
+            self.endRace(frame)
 
-def hazard(frame, playerNum):
-    player = state["players"][playerNum]
+    def hazard(self, frame, playerNum):
+        player = self.state["players"][playerNum]
 
-    if state["startFrame"] and "finished" not in player:
-        if "hazards" not in player:
-            player["hazards"] = 1
+        if self.state["startFrame"] and "finished" not in player:
+            if "hazards" not in player:
+                player["hazards"] = 1
+            else:
+                player["hazards"] += 1
+            self.conn.execute(self.db.hazards.insert(), race_id=self.race.id, player=playerNum, timestamp=self.getFrameElapse(self.state["startFrame"], frame))
+            print "hazard", "player:", playerNum, "time:", self.getFrameElapse(self.state["startFrame"], frame)
+
+    def rankUpdate(self, frame, rank, playerNum):
+        player = self.state["players"][playerNum]
+
+        if "rank" in player:
+            lastRank = player["rank"]
+            lastFrame = player["rankFrame"]
+            elapsed = self.getFrameElapse(lastFrame, frame)
+            sinceBegin = self.getFrameElapse(self.state["startFrame"], lastFrame)
+
+            print 'rank:', lastRank, "elapsed:", elapsed, "player:", playerNum, "currentRank:", rank
+            self.conn.execute(self.db.ranks.insert(), race_id=self.race.id, elapsed=elapsed, timestamp=sinceBegin, rank=lastRank, player=playerNum)
+
+            player["rankTimes"][lastRank-1] += self.getFrameElapse(lastFrame, frame)
+            player["rankFrame"] = frame
+
         else:
-            player["hazards"] += 1
-        conn.execute(hazards.insert(), race_id=race.id, player=playerNum, timestamp=getFrameElapse(state["startFrame"], frame))
-        print "hazard", "player:", playerNum, "time:", getFrameElapse(state["startFrame"], frame)
+            player["rankTimes"] = [0.,0.,0.,0.]
+            player["rankFrame"] = self.state["startFrame"]
 
-def rankUpdate(frame, rank, playerNum):
-    player = state["players"][playerNum]
+        player["rank"] = rank
 
-    if "rank" in player:
-        lastRank = player["rank"]
-        lastFrame = player["rankFrame"]
-        elapsed = getFrameElapse(lastFrame, frame)
-        sinceBegin = getFrameElapse(state["startFrame"], lastFrame)
+    def endRace(self, frame):
+        elapsed = self.getFrameElapse(self.state["startFrame"], frame)
+        self.race, self.state = self.reset()
 
-        print 'rank:', lastRank, "elapsed:", elapsed, "player:", playerNum, "currentRank:", rank
-        conn.execute(ranks.insert(), race_id=race.id, elapsed=elapsed, timestamp=sinceBegin, rank=lastRank, player=playerNum)
+# main worker
+def read_queue():
+    p = Parser()
+    # if we're in a thread, we'll eventually be terminated
+    while True:
+        try:
+            line = queue.get(shouldWait)
+        # if we're reading this from a file this should happen at EOF
+        except QueueEmpty:
+            break
 
-        player["rankTimes"][lastRank-1] += getFrameElapse(lastFrame, frame)
-        player["rankFrame"] = frame
-
-    else:
-        player["rankTimes"] = [0.,0.,0.,0.]
-        player["rankFrame"] = state["startFrame"]
-
-    player["rank"] = rank
-
-def endRace(frame):
-    global state
-    global race
-    elapsed = getFrameElapse(state["startFrame"], frame)
-    race, state = reset()
-
-with open(sys.argv[1], 'r') as f:
-    for line in f:
         chunks = line.split(" ")
         frame, info = chunks[0], chunks[1:]
 
@@ -130,20 +147,29 @@ with open(sys.argv[1], 'r') as f:
         
         if info[0] == "race":
             if info[1] == "started":
-                startRace(frame)
+                p.startRace(frame)
                 print info
             elif info[1] == "finished":
-                finish(frame, int(info[2]))
+                p.finish(frame, int(info[2]))
             elif info[1] == "hazard":
-                hazard(frame, int(info[2]))
+                p.hazard(frame, int(info[2]))
 
         elif info[0] == "lap":
             lap, player = int(info[1]), int(info[2])
             if lap > 1:
-                updateLap(frame, lap, player)
+                p.updateLap(frame, lap, player)
 
         elif info[0] == "rank":
             rank, player = int(info[1]), int(info[2])
-            rankUpdate(frame, rank, player)
+            p.rankUpdate(frame, rank, player)
 
+        queue.task_done()
 
+# read from log file
+if __name__ == "__main__":
+    shouldWait = False
+    with open(sys.argv[1], 'r') as f:
+        for line in f:
+            queue.put(line)
+
+    read_queue()
